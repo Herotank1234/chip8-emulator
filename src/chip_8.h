@@ -28,26 +28,26 @@ const uint8_t font[80] = {
   0xF0, 0x80, 0xF0, 0x80, 0x80
 };
 
-class chip_8 {
+class Chip_8 {
   public:
-    chip_8();
+    Chip_8();
   private:
     /* Memory - 4KB */
-    std::vector<uint8_t> memory;
+    std::vector<uint8_t> _memory;
     /* Display - 64x32 pixels */
-    std::vector<std::vector<bool>> display;
+    std::vector<std::vector<bool>> _display;
     /* Program counter */
-    uint16_t program_counter;
+    uint16_t _program_counter;
     /* Index register */
-    uint16_t index_register;
+    uint16_t _index_register;
     /* Stack for 16-bit addresses */
-    std::stack<uint16_t> stack;
+    std::stack<uint16_t> _stack;
     /* Delay timer */
-    uint8_t delay_timer;
+    uint8_t _delay_timer;
     /* Sound timer */
-    uint8_t sound_timer;
+    uint8_t _sound_timer;
     /* 16 8-bit general registers */
-    std::vector<uint8_t> vs;
+    std::vector<uint8_t> _vs;
 };
 
 #endif
