@@ -32,7 +32,12 @@ const uint8_t font[80] = {
 
 class Chip_8 {
   public:
+    /* Construtor*/
     Chip_8();
+    /* Decreases delay timer by 1 if its value is bigger than 0 */
+    void decrease_delay_timer();
+    /* Decreases sound timer by 1 if its value is bigger than 0 */
+    void decrease_sound_timer();
   private:
     /* Memory - 4KB */
     std::vector<uint8_t> _memory;
