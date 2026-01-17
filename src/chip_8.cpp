@@ -21,4 +21,14 @@ Chip_8::Chip_8() {
   for(uint8_t font_data : font) {
     _memory[ptr++] = font_data;
   }
-}
+};
+
+/* Decreases delay timer if bigger than 0 */
+void Chip_8::decrease_delay_timer() {
+  if(_delay_timer > 0) _delay_timer--;
+};
+
+/* Decreases sound timer if bigger than 0 */
+void Chip_8::decrease_sound_timer() {
+  if(_sound_timer > 0) _sound_timer--;
+};
