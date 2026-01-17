@@ -9,6 +9,7 @@
 #define DISPLAY_HEIGHT 32
 #define DISPLAY_WIDTH 64
 #define NUMBER_OF_GENERAL_REGISTERS 16
+#define FONT_MEMORY_ADDRESS 0x50
 
 const uint8_t font[80] = {
   0xF0, 0x90, 0x90, 0x90, 0xF0, 
