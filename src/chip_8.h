@@ -10,6 +10,10 @@
 #define DISPLAY_WIDTH 64
 #define NUMBER_OF_GENERAL_REGISTERS 16
 #define FONT_MEMORY_ADDRESS 0x50
+#define PROGRAM_ADDRESS 0x200
+#define FRONT_NIBBLE_MASK 0xF0
+#define BACK_NIBBLE_MASK 0x0F
+#define NIBBLE_SIZE 4
 
 const uint8_t font[80] = {
   0xF0, 0x90, 0x90, 0x90, 0xF0, 
@@ -38,6 +42,12 @@ class Chip_8 {
     void decrease_delay_timer();
     /* Decreases sound timer by 1 if its value is bigger than 0 */
     void decrease_sound_timer();
+    /* Run the fetch, decode and execute cycle */
+    void run_cycle();
+    /* Clears the display data by turning all values to false */
+    void clear_screen_data();
+    /* Draws the data stored in _display to the screen */
+    void display_to_screen();
   private:
     /* Memory - 4KB */
     std::vector<uint8_t> _memory;
@@ -55,6 +65,8 @@ class Chip_8 {
     uint8_t _sound_timer;
     /* 16 8-bit general registers */
     std::vector<uint8_t> _vs;
+    /* Value to keep track of whether we have written to the screen before */
+    bool _has_written;
 };
 
 #endif
