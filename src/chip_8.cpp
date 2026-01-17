@@ -15,4 +15,10 @@ Chip_8::Chip_8() {
   _delay_timer = 0;
   _sound_timer = 0;
   _vs = std::vector<uint8_t>(NUMBER_OF_GENERAL_REGISTERS, 0);
+
+  /* Load font into memory starting at 0x50 */
+  uint16_t ptr = FONT_MEMORY_ADDRESS;
+  for(uint8_t font_data : font) {
+    _memory[ptr++] = font_data;
+  }
 }
