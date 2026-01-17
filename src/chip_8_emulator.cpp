@@ -1,6 +1,7 @@
 #include <iostream>
+#include "chip_8.h"
 
 int main() {
-  std::cout << "Hello world" << std::endl;
+  Chip_8 *chip_8 = new Chip_8;
   return 0;
 }
