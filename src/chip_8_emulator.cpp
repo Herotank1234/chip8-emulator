@@ -1,7 +1,28 @@
+#include <chrono>
 #include <iostream>
+#include <memory>
 #include "chip_8.h"
 
+#define TIMER_FRAME_DURATION 16.66
+
 int main() {
-  Chip_8 *chip_8 = new Chip_8;
+  std::unique_ptr<Chip_8> chip_8(new Chip_8());
+
+  std::chrono::system_clock::time_point prev_timer_time = std::chrono::system_clock::now();
+  std::chrono::system_clock::time_point curr_timer_time = std::chrono::system_clock::now();
+  int count = 0;
+
+  while(true) {
+    curr_timer_time = std::chrono::system_clock::now();
+    std::chrono::duration<double, std::milli> time_passed = curr_timer_time - prev_timer_time;
+
+    if(time_passed.count() >= TIMER_FRAME_DURATION) {
+      prev_timer_time = curr_timer_time;
+      chip_8->decrease_delay_timer();
+      chip_8->decrease_sound_timer();
+      count++;
+    }
+  }
+
   return 0;
 }
