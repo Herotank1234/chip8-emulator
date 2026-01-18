@@ -6,14 +6,23 @@
 #include <vector>
 
 #define MEMORY_SIZE 4096
+
 #define DISPLAY_HEIGHT 32
 #define DISPLAY_WIDTH 64
+
 #define NUMBER_OF_GENERAL_REGISTERS 16
-#define FONT_MEMORY_ADDRESS 0x50
+
+#define FONT_ADDRESS 0x50
 #define PROGRAM_ADDRESS 0x200
+
+#define BIT_MASK 0x1
 #define FRONT_NIBBLE_MASK 0xF0
 #define BACK_NIBBLE_MASK 0x0F
+
 #define NIBBLE_SIZE 4
+#define BYTE_SIZE 8
+
+#define FLAG_REG 0xF
 
 const uint8_t font[80] = {
   0xF0, 0x90, 0x90, 0x90, 0xF0, 
@@ -63,7 +72,7 @@ class Chip_8 {
     uint8_t _delay_timer;
     /* Sound timer */
     uint8_t _sound_timer;
-    /* 16 8-bit general registers */
+    /* 16 8-bit general registers named v0 to vF */
     std::vector<uint8_t> _vs;
     /* Value to keep track of whether we have written to the screen before */
     bool _has_written;
