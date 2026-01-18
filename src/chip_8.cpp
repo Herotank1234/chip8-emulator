@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 #include "chip_8.h"
 
@@ -27,6 +28,19 @@ Chip_8::Chip_8() {
   _has_written = false;
 };
 
+/* Load ROM data into memory */
+void Chip_8::load_ROM(std::string file_name) {
+  /* Open file */
+  std::ifstream file(file_name, std::ios_base::binary);
+
+  /* Read data byte by byte and store in memory starting from 0x200 */
+  char curr_byte;
+  uint16_t ptr = PROGRAM_ADDRESS;
+  while(file.get(curr_byte)) { 
+    _memory[ptr++] = static_cast<uint8_t>(curr_byte);
+  }
+}
+
 /* Decreases delay timer if bigger than 0 */
 void Chip_8::decrease_delay_timer() {
   if(_delay_timer > 0) _delay_timer--;
@@ -37,6 +51,7 @@ void Chip_8::decrease_sound_timer() {
   if(_sound_timer > 0) _sound_timer--;
 };
 
+/* Runs one Fetch, decode, execute cycle */
 void Chip_8::run_cycle() {
   /* Fetch - Read two successive bytes and increment PC by 2 */
   uint8_t first_byte = _memory[_program_counter++];
@@ -47,10 +62,9 @@ void Chip_8::run_cycle() {
 
   uint8_t op1 = first_byte & BACK_NIBBLE_MASK;
   uint8_t op2 = (second_byte & FRONT_NIBBLE_MASK) >> NIBBLE_SIZE;
-  uint8_t op3 = first_byte & BACK_NIBBLE_MASK ;
+  uint8_t op3 = second_byte & BACK_NIBBLE_MASK ;
 
   /* Execute */
-
   switch(opcode) {
     case 0x0:
       /* 00E0 - Clear screen instruction */
@@ -105,7 +119,7 @@ void Chip_8::run_cycle() {
           uint8_t sprite_data = _memory[_index_register + i];
           for(uint16_t j = 0; j < BYTE_SIZE; j++) {
             /* Get current sprite pixel */
-            uint8_t sprite_pixel = (sprite_data & (BIT_MASK << j)) >> j;
+            uint8_t sprite_pixel = (sprite_data & (BIT_MASK << (BYTE_SIZE - 1 - j))) >> (BYTE_SIZE - 1 - j);
             uint8_t display_pixel = _display[y + i][x + j];
 
             /* If they are both on then set vF to 1 */
@@ -122,10 +136,12 @@ void Chip_8::run_cycle() {
           if(y + i == DISPLAY_HEIGHT - 1) break;
         }
       }
+      Chip_8::display_to_screen();
       break;
   }
 }
 
+/* Sets all values held in _display to false */
 void Chip_8::clear_screen_data() {
   for(size_t i = 0; i < DISPLAY_HEIGHT; i++) {
     for(size_t j = 0; j < DISPLAY_WIDTH; j++) {
@@ -134,6 +150,7 @@ void Chip_8::clear_screen_data() {
   }
 }
 
+/* Writes all data held in _display to the screen */
 void Chip_8::display_to_screen() {
   /* If we have already written to the screen, move the cursor back to the top */
   if(_has_written) { for(int i = 0; i < DISPLAY_HEIGHT; i++) std::cout << "\x1b[A"; }

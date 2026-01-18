@@ -3,6 +3,7 @@
 
 #include <stack>
 #include <stdint.h>
+#include <string>
 #include <vector>
 
 #define MEMORY_SIZE 4096
@@ -47,6 +48,8 @@ class Chip_8 {
   public:
     /* Construtor*/
     Chip_8();
+    /* Load ROM data into memory */
+    void load_ROM(std::string);
     /* Decreases delay timer by 1 if its value is bigger than 0 */
     void decrease_delay_timer();
     /* Decreases sound timer by 1 if its value is bigger than 0 */
