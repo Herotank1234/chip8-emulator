@@ -18,7 +18,7 @@ Chip_8::Chip_8() {
   _vs = std::vector<uint8_t>(NUMBER_OF_GENERAL_REGISTERS, 0);
 
   /* Load font into memory starting at 0x50 */
-  uint16_t ptr = FONT_MEMORY_ADDRESS;
+  uint16_t ptr = FONT_ADDRESS;
   for(uint8_t font_data : font) {
     _memory[ptr++] = font_data;
   }
@@ -57,6 +57,70 @@ void Chip_8::run_cycle() {
       if(op2 == 0xE) {
         Chip_8::clear_screen_data();
         Chip_8::display_to_screen();
+      }
+      break;
+    
+    case 0x1:
+      /* 1NNN - Sets the program counter to the value defined by the last three nibbles */
+      /* Concat the three opcodes*/
+      {
+        uint16_t new_pc = (op1 << (NIBBLE_SIZE * 2)) | (op2 << NIBBLE_SIZE) | op3;
+        _program_counter = new_pc;
+      }
+      break;
+    
+    case 0x6:
+      /* 6XNN - Sets the register defined by X to the value defined by the last byte */
+      _vs[op1] = second_byte;
+      break;
+    
+    case 0x7:
+      /* 7XNN - Adds the value defined by the last byte to the register defined by X */
+      _vs[op1] += second_byte;
+      break;
+
+    case 0xA:
+      /* ANNN - Sets the index register to the value defined by the last three bytes */
+      /* Concat the three opcodes*/
+      {
+        uint16_t new_index = (op1 << (NIBBLE_SIZE * 2)) | (op2 << NIBBLE_SIZE) | op3;
+        _index_register = new_index;
+      }
+      break;
+
+    case 0xD:
+      /* 
+        DXYN - Draws sprite N tall starting at the coordinates (x, y) 
+        from the registers defined by X and Y respectively 
+      */
+      /* Get x and y from their respective registers */
+      {
+        uint8_t x = _vs[op1] % DISPLAY_WIDTH;
+        uint8_t y = _vs[op2] % DISPLAY_HEIGHT;
+
+        /* Set flag register to 0 */
+        _vs[FLAG_REG] = 0;
+
+        for(uint16_t i = 0; i < static_cast<uint16_t>(op3); i++) {
+          uint8_t sprite_data = _memory[_index_register + i];
+          for(uint16_t j = 0; j < BYTE_SIZE; j++) {
+            /* Get current sprite pixel */
+            uint8_t sprite_pixel = (sprite_data & (BIT_MASK << j)) >> j;
+            uint8_t display_pixel = _display[y + i][x + j];
+
+            /* If they are both on then set vF to 1 */
+            if(sprite_pixel && display_pixel) _vs[FLAG_REG] = 1;
+
+            /* Set display pixel to the XOR of both pixels */
+            _display[y + i][x + j] = sprite_pixel ^ display_pixel;
+
+            /* If the right edge of the screen is reached, stop drawing this row */
+            if(x + j == DISPLAY_WIDTH - 1) break;
+          }
+
+          /* If the bottom edge of the screen is reached, stop */
+          if(y + i == DISPLAY_HEIGHT - 1) break;
+        }
       }
       break;
   }
