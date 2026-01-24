@@ -1,10 +1,12 @@
 #ifndef CHIP_8_H
 #define CHIP_8_H
 
+#include <memory>
 #include <stack>
 #include <stdint.h>
 #include <string>
 #include <vector>
+#include "screen.h"
 
 #define MEMORY_SIZE 4096
 
@@ -79,6 +81,8 @@ class Chip_8 {
     std::vector<uint8_t> _vs;
     /* Value to keep track of whether we have written to the screen before */
     bool _has_written;
+    /* Screen object which encapsulates our ncurses window */
+    std::unique_ptr<Screen> _screen;
 };
 
 #endif

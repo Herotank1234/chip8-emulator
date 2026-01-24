@@ -18,6 +18,9 @@ Chip_8::Chip_8() {
   _sound_timer = 0;
   _vs = std::vector<uint8_t>(NUMBER_OF_GENERAL_REGISTERS, 0);
 
+  /* Initialise screen */
+  _screen = std::make_unique<Screen>(DISPLAY_HEIGHT, DISPLAY_WIDTH);
+
   /* Load font into memory starting at 0x50 */
   uint16_t ptr = FONT_ADDRESS;
   for(uint8_t font_data : font) {
@@ -152,19 +155,6 @@ void Chip_8::clear_screen_data() {
 
 /* Writes all data held in _display to the screen */
 void Chip_8::display_to_screen() {
-  /* If we have already written to the screen, move the cursor back to the top */
-  if(_has_written) { for(int i = 0; i < DISPLAY_HEIGHT; i++) std::cout << "\x1b[A"; }
-
   /* Write the data to the screen */
-  for(std::vector<bool> row : _display) {
-    /* Move the cursor back to the start of the line and write the new data */
-    std::cout << "\r " << std::flush;
-    for(bool pixel : row) {
-      std::cout << (pixel ? "#" : ".") << " ";
-    }
-    std::cout << "\n";
-  }
-
-  /* Set _has_written if it already has not been set */
-  if(!_has_written) _has_written = true;
+  _screen->display(_display);
 }
