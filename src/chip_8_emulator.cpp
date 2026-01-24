@@ -8,7 +8,7 @@
 #define CYCLE_FRAME_DURATION 1.428
 
 int main(int argc, char** argv) {
-  std::unique_ptr<Chip_8> chip_8(new Chip_8());
+  std::unique_ptr<Chip_8> chip_8 = std::make_unique<Chip_8>();
 
   /* Load the ROM */
   std::string file_name = argv[1];
