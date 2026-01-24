@@ -17,6 +17,7 @@
 
 #define FONT_ADDRESS 0x50
 #define PROGRAM_ADDRESS 0x200
+#define ADDRESS_RANGE 0x1000
 
 #define BIT_MASK 0x1
 #define FRONT_NIBBLE_MASK 0xF0
