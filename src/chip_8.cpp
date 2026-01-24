@@ -70,8 +70,17 @@ void Chip_8::run_cycle() {
   /* Execute */
   switch(opcode) {
     case 0x0:
+      /* 00EE - Return from subroutine */
+      if(op2 == 0xE && op3 == 0xE) {
+        /* Pop return address from stack */
+        uint16_t return_addr = _stack.top();
+        _stack.pop();
+
+        /* Set pc to return address */
+        _program_counter = return_addr;
+
       /* 00E0 - Clear screen instruction */
-      if(op2 == 0xE) {
+      } else if(op2 == 0xE && op3 == 0x0) {
         Chip_8::clear_screen_data();
         Chip_8::display_to_screen();
       }
@@ -86,6 +95,33 @@ void Chip_8::run_cycle() {
       }
       break;
     
+    case 0x2:
+      /* 2NNN - Call subroutine at location NNN */
+      {
+        /* Push current pc to stack */
+        _stack.push(_program_counter);
+        /* Get the address of the subroutine */
+        uint16_t subroutine_addr = (op1 << (NIBBLE_SIZE * 2)) | (op2 << NIBBLE_SIZE) | op3;
+        /* Set pc to the subroutine address */
+        _program_counter = subroutine_addr;
+      }
+      break;
+
+    case 0x3:
+      /* 3XNN - Skip one instruction if vX == NN */
+      if(_vs[op1] == second_byte) _program_counter += 2;
+      break;
+
+    case 0x4:
+      /* 4XNN - Skip one instruction if vX != NN */
+        if(_vs[op1] != second_byte) _program_counter += 2;
+        break;
+
+    case 0x5:
+      /* 5XY0 - Skips one instruction is vX == vY */
+      if(_vs[op1] == _vs[op2]) _program_counter += 2;
+      break;
+    
     case 0x6:
       /* 6XNN - Sets the register defined by X to the value defined by the last byte */
       _vs[op1] = second_byte;
@@ -94,6 +130,82 @@ void Chip_8::run_cycle() {
     case 0x7:
       /* 7XNN - Adds the value defined by the last byte to the register defined by X */
       _vs[op1] += second_byte;
+      break;
+
+    case 0x8:
+      switch(op3) {
+        case 0x0:
+          /* 8XY0 - vX = vY*/
+          _vs[op1] = _vs[op2];
+          break;
+        
+        case 0x1:
+          /* 8XY1 - vX = vX | vY*/
+          _vs[op1] = _vs[op1] | _vs[op2];
+          break;
+
+        case 0x2:
+          /* 8XY2 - vX = vX & vY*/
+          _vs[op1] = _vs[op1] & _vs[op2];
+          break;
+
+        case 0x3:
+          /* 8XY3 - vX = vX ^ vY*/
+          _vs[op1] = _vs[op1] ^ _vs[op2];
+          break;
+
+        case 0x4:
+          /* 8XY4 - vX += vY */
+          _vs[op1] += _vs[op2];
+          break;
+
+        case 0x5:
+          /* 8XY5 - vX = vX - vY */
+          /* Set flag register */
+          _vs[FLAG_REG] = 1;
+          _vs[op1] = _vs[op1] - _vs[op2];
+          /* If underflow happens, set flag register to 0 */
+          if(_vs[op2] > _vs[op1]) _vs[FLAG_REG] = 0;
+          break;
+        
+        case 0x6:
+          {
+            /* 8XY6 - set vX = vY, then shift vX 1 bit to the right */
+            _vs[op1] = _vs[op2];
+            /* Get bit that will be shifted out */
+            uint8_t shifted_bit = _vs[op1] & BIT_MASK;
+            _vs[op1] >>= 1;
+            /* Set flag register to the bit that was shifted out */
+            _vs[FLAG_REG] = shifted_bit;
+          }
+          break;
+
+        case 0x7:
+          /* 8XY7 - vX = vY - vX */
+          /* Set flag register */
+          _vs[FLAG_REG] = 1;
+          _vs[op1] = _vs[op2] - _vs[op1];
+          /* If underflow happens, set flag register to 0 */
+          if(_vs[op1] > _vs[op2]) _vs[FLAG_REG] = 0;
+          break;
+
+        case 0xE:
+          {
+            /* 8XYE - set vX = vY, then shift vX 1 bit to the left */
+            _vs[op1] = _vs[op2];
+            /* Get bit that will be shifted out */
+            uint8_t shifted_bit = (_vs[op1] & (BIT_MASK << (BYTE_SIZE - 1))) >> (BYTE_SIZE - 1);
+            _vs[op1] <<= 1;
+            /* Set flag register to the bit that was shifted out */
+            _vs[FLAG_REG] = shifted_bit;
+          }
+          break;
+      }
+      break;
+
+    case 0x9:
+      /* 9XY0 - Skips one instruction is vX != vY */
+      if(_vs[op1] != _vs[op2]) _program_counter += 2;
       break;
 
     case 0xA:
@@ -138,9 +250,59 @@ void Chip_8::run_cycle() {
           /* If the bottom edge of the screen is reached, stop */
           if(y + i == DISPLAY_HEIGHT - 1) break;
         }
+
+        Chip_8::display_to_screen();
       }
-      Chip_8::display_to_screen();
       break;
+
+    case 0xF:
+      switch(second_byte) {
+        case 0x1E:
+          /* FX1E - Add vX to index register */
+          _index_register += _vs[op1];
+          /* 
+            If index register goes above 0x1000 (the normal addressing range), 
+            set flag register 
+          */
+          if(_index_register > ADDRESS_RANGE) _vs[FLAG_REG] = 1;
+          break;
+      
+        case 0x33:
+          {
+            /* 
+              FX33 - Split number in vX into each digit and store in memory starting 
+              at index register 
+            */
+            int num = _vs[op1];
+            std::vector<int> digits;
+            /* Split into units, tens and hundreds and store in digits (reversed) */
+            for(int i = 0; i < 3; i++) {
+              digits.push_back(num % 10);
+              num /= 10;
+            }
+
+            /* Store into memory starting at index register */
+            for(int i = 0; i < 3; i++) {
+              _memory[_index_register + i] = digits[digits.size() - 1 - i];
+            }
+          }
+          break;
+
+        case 0x55:
+          /* FX55 - Store registers v0 to vX into memory starting at index register */
+          for(int i = 0; i <= op1; i++) {
+            _memory[_index_register + i] = _vs[i];
+          }
+          break;
+        case 0x65:
+          /* FX65 - Load registers v0 to vX from memory starting at index register */
+          for(int i = 0; i <= op1; i++) {
+            _vs[i] = _memory[_index_register + i];
+          }
+          break;
+      }
+      break;
+
   }
 }
 
