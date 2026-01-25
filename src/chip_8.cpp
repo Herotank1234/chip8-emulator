@@ -155,17 +155,23 @@ void Chip_8::run_cycle() {
           break;
 
         case 0x4:
-          /* 8XY4 - vX += vY */
-          _vs[op1] += _vs[op2];
+          {
+            /* 8XY4 - vX += vY */
+            uint initial_val = _vs[op1];
+            _vs[op1] += _vs[op2];
+            /* If overflow has happened, set the flag register to 1, otherwise 0 */
+            _vs[FLAG_REG] = (_vs[op1] < initial_val ? 1 : 0);
+          }
           break;
 
         case 0x5:
-          /* 8XY5 - vX = vX - vY */
-          /* Set flag register */
-          _vs[FLAG_REG] = 1;
-          _vs[op1] = _vs[op1] - _vs[op2];
-          /* If underflow happens, set flag register to 0 */
-          if(_vs[op2] > _vs[op1]) _vs[FLAG_REG] = 0;
+          {
+            /* 8XY5 - vX = vX - vY */
+            uint8_t initial_value = _vs[op1];
+            _vs[op1] = _vs[op1] - _vs[op2];
+            /* If underflow has happened, set flag register to 0, otherwise 1 */
+            _vs[FLAG_REG] = (_vs[op1] > initial_value ? 0 : 1);
+          }
           break;
         
         case 0x6:
@@ -181,12 +187,13 @@ void Chip_8::run_cycle() {
           break;
 
         case 0x7:
-          /* 8XY7 - vX = vY - vX */
-          /* Set flag register */
-          _vs[FLAG_REG] = 1;
-          _vs[op1] = _vs[op2] - _vs[op1];
-          /* If underflow happens, set flag register to 0 */
-          if(_vs[op1] > _vs[op2]) _vs[FLAG_REG] = 0;
+          {
+            /* 8XY7 - vX = vY - vX */
+            uint8_t initial_value = _vs[op2];
+            _vs[op1] = _vs[op2] - _vs[op1];
+            /* If underflow has happened, set flag register to 0, otherwise 1 */
+            _vs[FLAG_REG] = (_vs[op1] > initial_value ? 0 : 1);
+          }
           break;
 
         case 0xE:
@@ -202,6 +209,7 @@ void Chip_8::run_cycle() {
           break;
       }
       break;
+
 
     case 0x9:
       /* 9XY0 - Skips one instruction is vX != vY */
@@ -294,6 +302,7 @@ void Chip_8::run_cycle() {
             _memory[_index_register + i] = _vs[i];
           }
           break;
+
         case 0x65:
           /* FX65 - Load registers v0 to vX from memory starting at index register */
           for(int i = 0; i <= op1; i++) {
