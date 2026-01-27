@@ -2,9 +2,12 @@
 #define CHIP_8_H
 
 #include <memory>
+#include <ncurses.h>
+#include <random>
 #include <stack>
 #include <stdint.h>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include "screen.h"
 
@@ -25,6 +28,7 @@
 
 #define NIBBLE_SIZE 4
 #define BYTE_SIZE 8
+#define INSTRUCTION_SIZE 2;
 
 #define FLAG_REG 0xF
 
@@ -45,6 +49,25 @@ const uint8_t font[80] = {
   0xE0, 0x90, 0x90, 0x90, 0xE0, 
   0xF0, 0x80, 0xF0, 0x80, 0xF0, 
   0xF0, 0x80, 0xF0, 0x80, 0x80
+};
+
+const std::unordered_map<char, uint8_t> keyboard_map = {
+  {'1', 0x1},  
+  {'2', 0x2},  
+  {'3', 0x3},  
+  {'4', 0xC},  
+  {'q', 0x4},  
+  {'w', 0x5},  
+  {'e', 0x6},  
+  {'r', 0xD},  
+  {'a', 0x7},  
+  {'s', 0x8},  
+  {'d', 0x9},  
+  {'f', 0xE},  
+  {'z', 0xA},  
+  {'x', 0x0},  
+  {'c', 0xB},  
+  {'v', 0xF}  
 };
 
 class Chip_8 {
@@ -84,6 +107,10 @@ class Chip_8 {
     bool _has_written;
     /* Screen object which encapsulates our ncurses window */
     std::unique_ptr<Screen> _screen;
+    /* Random number generation */
+    std::random_device _rand_dev;
+    std::mt19937 _mt;
+    std::uniform_int_distribution<std::mt19937::result_type> _uni_int_dist;
 };
 
 #endif
