@@ -1,4 +1,5 @@
 #include "screen.h"
+#include <ncurses.h>
 
 Screen::Screen(int height, int width) :_height(height), _width(width) {
   /* Initialise the screen */
@@ -27,6 +28,7 @@ Screen::Screen(int height, int width) :_height(height), _width(width) {
   /* Create a new window from the dimension calculated from above */
   _window = newwin(_height + BORDER_SIZE, (_width * WIDTH_SCALER) + BORDER_SIZE, 
     top_left_y, top_left_x);
+  wtimeout(_window, 1);
 
   /* Create a border around our window */
   box(_window, 0, 0);
@@ -49,4 +51,8 @@ void Screen::display(const std::vector<std::vector<bool>> &data) {
   
   /* Display to window*/
   wrefresh(_window);
+}
+
+char Screen::get_char() {
+  return wgetch(_window);
 }
