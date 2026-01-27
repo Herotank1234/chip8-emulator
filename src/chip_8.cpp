@@ -1,5 +1,7 @@
 #include <fstream>
 #include <iostream>
+#include <ncurses.h>
+#include <unordered_map>
 #include "chip_8.h"
 
 Chip_8::Chip_8() {
@@ -20,6 +22,10 @@ Chip_8::Chip_8() {
 
   /* Initialise screen */
   _screen = std::make_unique<Screen>(DISPLAY_HEIGHT, DISPLAY_WIDTH);
+
+  /* Initialise random number generator */
+  _mt = std::mt19937(_rand_dev());
+  _uni_int_dist = std::uniform_int_distribution<std::mt19937::result_type>(0, 0xFF);
 
   /* Load font into memory starting at 0x50 */
   uint16_t ptr = FONT_ADDRESS;
@@ -224,6 +230,24 @@ void Chip_8::run_cycle() {
         _index_register = new_index;
       }
       break;
+    
+    case 0xB:
+      /* BNNN - Jump to the address NNN + the value in v0 */
+      {
+        uint16_t new_address = (op1 << (NIBBLE_SIZE * 2)) | (op2 << NIBBLE_SIZE) | op3;
+        new_address += _vs[0];
+        _program_counter = new_address;
+      }
+      break;
+
+    case 0xC:
+      /* CXNN - Generates a random number, bitwise AND with the value NN and stores in vX */
+      {
+        uint8_t random_number = _uni_int_dist(_mt);
+        random_number &= second_byte;
+        _vs[op1] = random_number;
+      }
+      break;
 
     case 0xD:
       /* 
@@ -262,9 +286,68 @@ void Chip_8::run_cycle() {
         Chip_8::display_to_screen();
       }
       break;
+    
+    case 0xE:
+      switch(second_byte) {
+        case 0x9E:
+          /* EX9E - Skip one instruction if the key corresponding to the value in vX is pressed */
+          {
+            char c = _screen->get_char();
+            std::unordered_map<char, uint8_t>::const_iterator it = keyboard_map.find(c);
+            if(it != keyboard_map.end()) {
+              uint8_t key_pressed = it->second;
+              if(key_pressed == _vs[op1]) _program_counter += INSTRUCTION_SIZE;
+            }
+          }
+          break;
+
+        case 0xA1:
+          /* EXA1 - Skip one instruction if the key corresponding to the value in vX is not pressed */
+         {
+            char c = _screen->get_char();
+            std::unordered_map<char, uint8_t>::const_iterator it = keyboard_map.find(c);
+            if(c == ERR || it == keyboard_map.end()) {
+              _program_counter += INSTRUCTION_SIZE;
+            } else {
+              uint8_t key_pressed = it->second;
+              if(key_pressed != _vs[op1]) _program_counter += INSTRUCTION_SIZE;
+            }
+          }
+          break;
+      }
+      break;
 
     case 0xF:
       switch(second_byte) {
+        case 0x0A:
+          /* FX1A - Blocks until a character is pressed (by decrementing program counter) and sets vX to it */
+          {
+            char c = _screen->get_char();
+            std::unordered_map<char, uint8_t>::const_iterator it = keyboard_map.find(c);
+            if(it != keyboard_map.end()) {
+              uint8_t key_pressed = it->second;
+              _vs[op1] = key_pressed;
+            } else {
+              _program_counter -= INSTRUCTION_SIZE;
+            }
+          }
+          break;
+
+        case 0x07:
+          /* Set vX to the value of the delay timer */
+          _vs[op1] = _delay_timer;
+          break;
+
+        case 0x15:
+          /* Set delay timer to the value in vX */
+          _delay_timer = _vs[op1];
+          break;
+
+        case 0x18:
+          /* Set sound timer to the value in vX */
+          _sound_timer = _vs[op1];
+          break;
+
         case 0x1E:
           /* FX1E - Add vX to index register */
           _index_register += _vs[op1];
