@@ -1,5 +1,4 @@
 #include <chrono>
-#include <iostream>
 #include <memory>
 #include <string>
 #include "chip_8.h"
