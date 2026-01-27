@@ -12,6 +12,7 @@ class Screen {
     /* Constructor */
     Screen(int height, int width);
     void display(const std::vector<std::vector<bool>> &data);
+    char get_char();
   private:
     /* Height of the window */
     int _height;
