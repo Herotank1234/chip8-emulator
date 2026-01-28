@@ -23,3 +23,9 @@ void Screen::display(const std::vector<std::vector<bool>> &data) {
 bool Screen::is_open() {
   return _window->isOpen();
 }
+
+void Screen::poll_events() {
+  while (const std::optional<sf::Event> event = _window->pollEvent()) {
+    if (event->is<sf::Event::Closed>()) _window->close();
+  }
+}
