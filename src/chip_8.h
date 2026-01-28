@@ -2,6 +2,7 @@
 #define CHIP_8_H
 
 #include <random>
+#include <SFML/Window.hpp>
 #include <stack>
 #include <stdint.h>
 #include <string>
@@ -25,9 +26,11 @@
 
 #define NIBBLE_SIZE 4
 #define BYTE_SIZE 8
-#define INSTRUCTION_SIZE 2;
+#define INSTRUCTION_SIZE 2
 
 #define FLAG_REG 0xF
+
+#define NO_KEY 0xFF
 
 const uint8_t font[80] = {
   0xF0, 0x90, 0x90, 0x90, 0xF0, 
@@ -48,23 +51,23 @@ const uint8_t font[80] = {
   0xF0, 0x80, 0xF0, 0x80, 0x80
 };
 
-const std::unordered_map<char, uint8_t> keyboard_map = {
-  {'1', 0x1},  
-  {'2', 0x2},  
-  {'3', 0x3},  
-  {'4', 0xC},  
-  {'q', 0x4},  
-  {'w', 0x5},  
-  {'e', 0x6},  
-  {'r', 0xD},  
-  {'a', 0x7},  
-  {'s', 0x8},  
-  {'d', 0x9},  
-  {'f', 0xE},  
-  {'z', 0xA},  
-  {'x', 0x0},  
-  {'c', 0xB},  
-  {'v', 0xF}  
+const std::unordered_map<sf::Keyboard::Key, uint8_t> keyboard_mapping = {
+  {sf::Keyboard::Key::Num1, 0x1},
+  {sf::Keyboard::Key::Num2, 0x2},
+  {sf::Keyboard::Key::Num3, 0x3},
+  {sf::Keyboard::Key::Num4, 0xC},
+  {sf::Keyboard::Key::Q, 0x4},
+  {sf::Keyboard::Key::W, 0x5},
+  {sf::Keyboard::Key::E, 0x6},
+  {sf::Keyboard::Key::R, 0xD},
+  {sf::Keyboard::Key::A, 0x7},
+  {sf::Keyboard::Key::S, 0x8},
+  {sf::Keyboard::Key::D, 0x9},
+  {sf::Keyboard::Key::F, 0xE},
+  {sf::Keyboard::Key::Z, 0xA},
+  {sf::Keyboard::Key::X, 0x0},
+  {sf::Keyboard::Key::C, 0xB},
+  {sf::Keyboard::Key::V, 0xF}
 };
 
 class Chip_8 {
@@ -83,6 +86,8 @@ class Chip_8 {
     void clear_screen_data();
     /* Get the data stored in _display */
     std::vector<std::vector<bool>> get_data();
+    /* Updates the status of the keyboard */
+    void update_keyboard_status();
   private:
     /* Memory - 4KB */
     std::vector<uint8_t> _memory;
@@ -106,6 +111,9 @@ class Chip_8 {
     std::random_device _rand_dev;
     std::mt19937 _mt;
     std::uniform_int_distribution<std::mt19937::result_type> _uni_int_dist;
+    /* Chip 8 Keyboard */
+    std::unordered_map<uint8_t, bool> _keyboard;
+    uint8_t _curr_pressed_key;
 };
 
 #endif

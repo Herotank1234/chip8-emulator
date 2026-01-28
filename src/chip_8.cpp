@@ -1,6 +1,4 @@
 #include <fstream>
-#include <iostream>
-#include <unordered_map>
 #include "chip_8.h"
 
 Chip_8::Chip_8() {
@@ -22,6 +20,10 @@ Chip_8::Chip_8() {
   /* Initialise random number generator */
   _mt = std::mt19937(_rand_dev());
   _uni_int_dist = std::uniform_int_distribution<std::mt19937::result_type>(0, 0xFF);
+
+  /* Initialise keyboard */
+  _keyboard = std::unordered_map<uint8_t, bool>();
+  _curr_pressed_key = NO_KEY;
 
   /* Load font into memory starting at 0x50 */
   uint16_t ptr = FONT_ADDRESS;
@@ -289,28 +291,12 @@ void Chip_8::run_cycle() {
       switch(second_byte) {
         case 0x9E:
           /* EX9E - Skip one instruction if the key corresponding to the value in vX is pressed */
-          {
-            // char c = _screen->get_char();
-            // std::unordered_map<char, uint8_t>::const_iterator it = keyboard_map.find(c);
-            // if(it != keyboard_map.end()) {
-            //   uint8_t key_pressed = it->second;
-            //   if(key_pressed == _vs[op1]) _program_counter += INSTRUCTION_SIZE;
-            // }
-          }
+          if(_keyboard[_vs[op1]]) _program_counter += INSTRUCTION_SIZE;
           break;
 
         case 0xA1:
           /* EXA1 - Skip one instruction if the key corresponding to the value in vX is not pressed */
-         {
-            // char c = _screen->get_char();
-            // std::unordered_map<char, uint8_t>::const_iterator it = keyboard_map.find(c);
-            // if(c == ERR || it == keyboard_map.end()) {
-            //   _program_counter += INSTRUCTION_SIZE;
-            // } else {
-            //   uint8_t key_pressed = it->second;
-            //   if(key_pressed != _vs[op1]) _program_counter += INSTRUCTION_SIZE;
-            // }
-          }
+          if(!_keyboard[_vs[op1]]) _program_counter += INSTRUCTION_SIZE;
           break;
       }
       break;
@@ -318,31 +304,50 @@ void Chip_8::run_cycle() {
     case 0xF:
       switch(second_byte) {
         case 0x0A:
-          /* FX1A - Blocks until a character is pressed (by decrementing program counter) and sets vX to it */
+          /* FX0A - Blocks until a character is pressed (by decrementing program counter) and sets vX to it */
           {
-            // char c = _screen->get_char();
-            // std::unordered_map<char, uint8_t>::const_iterator it = keyboard_map.find(c);
-            // if(it != keyboard_map.end()) {
-            //   uint8_t key_pressed = it->second;
-            //   _vs[op1] = key_pressed;
-            // } else {
-            //   _program_counter -= INSTRUCTION_SIZE;
-            // }
+            bool key_is_pressed = false;
+            for(const std::pair<uint8_t, bool> key : _keyboard) {
+              key_is_pressed |= key.second;
+            }
+
+            if(!key_is_pressed && _curr_pressed_key == NO_KEY) {
+              /* If no key is pressed, block */
+              _program_counter -= INSTRUCTION_SIZE;
+            } else if(_curr_pressed_key == NO_KEY) {
+              /* If a key has been pressed, find the key */
+              for (const std::pair<uint8_t, bool> key : _keyboard) {
+                if(key.second) {
+                  _curr_pressed_key = key.first;
+                  break;
+                }
+              }
+              _program_counter -= INSTRUCTION_SIZE;
+            } else {
+              /* If the key is still being pressed, block */
+              if(_keyboard[_curr_pressed_key]) {
+                _program_counter -= INSTRUCTION_SIZE;
+              } else {
+                /* Set vX to the key that was pressed and released */
+                _vs[op1] = _curr_pressed_key;
+                _curr_pressed_key = NO_KEY;
+              }
+            }
           }
           break;
 
         case 0x07:
-          /* Set vX to the value of the delay timer */
+          /* FX07 - Set vX to the value of the delay timer */
           _vs[op1] = _delay_timer;
           break;
 
         case 0x15:
-          /* Set delay timer to the value in vX */
+          /* FX15 - Set delay timer to the value in vX */
           _delay_timer = _vs[op1];
           break;
 
         case 0x18:
-          /* Set sound timer to the value in vX */
+          /* FX18 - Set sound timer to the value in vX */
           _sound_timer = _vs[op1];
           break;
 
@@ -407,4 +412,11 @@ void Chip_8::clear_screen_data() {
 /* Get data held in _display */
 std::vector<std::vector<bool>> Chip_8::get_data() {
   return _display;
+}
+
+/* Updates the status of the keyboard */
+void Chip_8::update_keyboard_status() {
+  for(const std::pair<sf::Keyboard::Key, uint8_t> &mapping : keyboard_mapping) {
+    _keyboard[mapping.second] = sf::Keyboard::isKeyPressed(mapping.first);
+  }
 }
