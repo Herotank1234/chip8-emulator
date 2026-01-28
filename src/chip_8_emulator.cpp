@@ -31,6 +31,8 @@ int main(int argc, char** argv) {
     */
     if(cycle_time_passed.count() >= CYCLE_FRAME_DURATION) {
       prev_cycle_time = curr_time;
+      screen->poll_events();
+      chip_8->update_keyboard_status();
       chip_8->run_cycle();
     }
 
