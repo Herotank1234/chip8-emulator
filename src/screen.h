@@ -1,25 +1,28 @@
 #ifndef SCREEN_H
 #define SCREEN_H
 
-#include <ncurses.h>
 #include <vector>
+#include <SFML/Graphics.hpp>
 
-#define BORDER_SIZE 2
-#define WIDTH_SCALER 2
+#define SCALE 10
 
 class Screen {
   public:
     /* Constructor */
-    Screen(int height, int width);
+    Screen(u_int16_t height, u_int16_t width);
+    /* Display the data to the screen */
     void display(const std::vector<std::vector<bool>> &data);
-    char get_char();
+    /* Check if the window is still open */
+    bool is_open();
   private:
     /* Height of the window */
-    int _height;
+    uint32_t _height;
     /* Width of the window */
-    int _width;
+    uint32_t _width;
     /* Pointer to the window */
-    WINDOW *_window;
+    std::unique_ptr<sf::RenderWindow> _window;
+    /* Pixel */
+    sf::RectangleShape _square;
 };
 
 #endif

@@ -1,6 +1,5 @@
 #include <fstream>
 #include <iostream>
-#include <ncurses.h>
 #include <unordered_map>
 #include "chip_8.h"
 
@@ -19,9 +18,6 @@ Chip_8::Chip_8() {
   _delay_timer = 0;
   _sound_timer = 0;
   _vs = std::vector<uint8_t>(NUMBER_OF_GENERAL_REGISTERS, 0);
-
-  /* Initialise screen */
-  _screen = std::make_unique<Screen>(DISPLAY_HEIGHT, DISPLAY_WIDTH);
 
   /* Initialise random number generator */
   _mt = std::mt19937(_rand_dev());
@@ -76,19 +72,23 @@ void Chip_8::run_cycle() {
   /* Execute */
   switch(opcode) {
     case 0x0:
-      /* 00EE - Return from subroutine */
-      if(op2 == 0xE && op3 == 0xE) {
-        /* Pop return address from stack */
-        uint16_t return_addr = _stack.top();
-        _stack.pop();
+      switch(second_byte) {
+        case 0xEE:
+          /* 00EE - Return from subroutine */
+          {
+            /* Pop return address from stack */
+            uint16_t return_addr = _stack.top();
+            _stack.pop();
 
-        /* Set pc to return address */
-        _program_counter = return_addr;
+            /* Set pc to return address */
+            _program_counter = return_addr;
+          }
+          break;
 
-      /* 00E0 - Clear screen instruction */
-      } else if(op2 == 0xE && op3 == 0x0) {
-        Chip_8::clear_screen_data();
-        Chip_8::display_to_screen();
+        case 0xE0:
+          /* 00E0 - Clear screen instruction */
+          Chip_8::clear_screen_data();
+          break;
       }
       break;
     
@@ -282,8 +282,6 @@ void Chip_8::run_cycle() {
           /* If the bottom edge of the screen is reached, stop */
           if(y + i == DISPLAY_HEIGHT - 1) break;
         }
-
-        Chip_8::display_to_screen();
       }
       break;
     
@@ -292,26 +290,26 @@ void Chip_8::run_cycle() {
         case 0x9E:
           /* EX9E - Skip one instruction if the key corresponding to the value in vX is pressed */
           {
-            char c = _screen->get_char();
-            std::unordered_map<char, uint8_t>::const_iterator it = keyboard_map.find(c);
-            if(it != keyboard_map.end()) {
-              uint8_t key_pressed = it->second;
-              if(key_pressed == _vs[op1]) _program_counter += INSTRUCTION_SIZE;
-            }
+            // char c = _screen->get_char();
+            // std::unordered_map<char, uint8_t>::const_iterator it = keyboard_map.find(c);
+            // if(it != keyboard_map.end()) {
+            //   uint8_t key_pressed = it->second;
+            //   if(key_pressed == _vs[op1]) _program_counter += INSTRUCTION_SIZE;
+            // }
           }
           break;
 
         case 0xA1:
           /* EXA1 - Skip one instruction if the key corresponding to the value in vX is not pressed */
          {
-            char c = _screen->get_char();
-            std::unordered_map<char, uint8_t>::const_iterator it = keyboard_map.find(c);
-            if(c == ERR || it == keyboard_map.end()) {
-              _program_counter += INSTRUCTION_SIZE;
-            } else {
-              uint8_t key_pressed = it->second;
-              if(key_pressed != _vs[op1]) _program_counter += INSTRUCTION_SIZE;
-            }
+            // char c = _screen->get_char();
+            // std::unordered_map<char, uint8_t>::const_iterator it = keyboard_map.find(c);
+            // if(c == ERR || it == keyboard_map.end()) {
+            //   _program_counter += INSTRUCTION_SIZE;
+            // } else {
+            //   uint8_t key_pressed = it->second;
+            //   if(key_pressed != _vs[op1]) _program_counter += INSTRUCTION_SIZE;
+            // }
           }
           break;
       }
@@ -322,14 +320,14 @@ void Chip_8::run_cycle() {
         case 0x0A:
           /* FX1A - Blocks until a character is pressed (by decrementing program counter) and sets vX to it */
           {
-            char c = _screen->get_char();
-            std::unordered_map<char, uint8_t>::const_iterator it = keyboard_map.find(c);
-            if(it != keyboard_map.end()) {
-              uint8_t key_pressed = it->second;
-              _vs[op1] = key_pressed;
-            } else {
-              _program_counter -= INSTRUCTION_SIZE;
-            }
+            // char c = _screen->get_char();
+            // std::unordered_map<char, uint8_t>::const_iterator it = keyboard_map.find(c);
+            // if(it != keyboard_map.end()) {
+            //   uint8_t key_pressed = it->second;
+            //   _vs[op1] = key_pressed;
+            // } else {
+            //   _program_counter -= INSTRUCTION_SIZE;
+            // }
           }
           break;
 
@@ -394,7 +392,6 @@ void Chip_8::run_cycle() {
           break;
       }
       break;
-
   }
 }
 
@@ -407,8 +404,7 @@ void Chip_8::clear_screen_data() {
   }
 }
 
-/* Writes all data held in _display to the screen */
-void Chip_8::display_to_screen() {
-  /* Write the data to the screen */
-  _screen->display(_display);
+/* Get data held in _display */
+std::vector<std::vector<bool>> Chip_8::get_data() {
+  return _display;
 }

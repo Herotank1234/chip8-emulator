@@ -1,15 +1,12 @@
 #ifndef CHIP_8_H
 #define CHIP_8_H
 
-#include <memory>
-#include <ncurses.h>
 #include <random>
 #include <stack>
 #include <stdint.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "screen.h"
 
 #define MEMORY_SIZE 4096
 
@@ -84,8 +81,8 @@ class Chip_8 {
     void run_cycle();
     /* Clears the display data by turning all values to false */
     void clear_screen_data();
-    /* Draws the data stored in _display to the screen */
-    void display_to_screen();
+    /* Get the data stored in _display */
+    std::vector<std::vector<bool>> get_data();
   private:
     /* Memory - 4KB */
     std::vector<uint8_t> _memory;
@@ -105,8 +102,6 @@ class Chip_8 {
     std::vector<uint8_t> _vs;
     /* Value to keep track of whether we have written to the screen before */
     bool _has_written;
-    /* Screen object which encapsulates our ncurses window */
-    std::unique_ptr<Screen> _screen;
     /* Random number generation */
     std::random_device _rand_dev;
     std::mt19937 _mt;
