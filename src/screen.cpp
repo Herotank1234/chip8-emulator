@@ -3,6 +3,7 @@
 Screen::Screen(uint16_t height, u_int16_t width) :_height(height), _width(width) {
   /* Create the window */
   _window = std::make_unique<sf::RenderWindow>(sf::VideoMode({_width * SCALE, _height * SCALE}), "Chip 8 Emulator");
+  _window->setPosition({0, 0});
   /* Create a rectangle shape as our pixel */
   _square = sf::RectangleShape({SCALE, SCALE});
 }
@@ -12,7 +13,9 @@ void Screen::display(const std::vector<std::vector<bool>> &data) {
   for(uint16_t i = 0; i < _height; i++) {
     for(uint16_t j = 0; j < _width; j++) {
       if(data[i][j]) {
-        _square.setPosition({j * SCALE, i * SCALE});
+        float j_pos = static_cast<float>(j * SCALE);
+        float i_pos = static_cast<float>(i * SCALE);
+        _square.setPosition({j_pos, i_pos});
         _window->draw(_square);
       }
     }
