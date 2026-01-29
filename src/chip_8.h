@@ -72,6 +72,12 @@ const std::unordered_map<sf::Keyboard::Key, uint8_t> keyboard_mapping = {
   {sf::Keyboard::Key::V, 0xF}
 };
 
+typedef enum Refresh_State {
+  FREE,
+  WAITING,
+  REFRESH_FINISHED
+} Refresh_State;
+
 class Chip_8 {
   public:
     /* Construtor*/
@@ -90,6 +96,8 @@ class Chip_8 {
     std::vector<std::vector<bool>> get_data();
     /* Updates the status of the keyboard */
     void update_keyboard_status();
+    /* Set the refresh state */
+    void set_refresh_state();
   private:
     /* Memory - 4KB */
     std::vector<uint8_t> _memory;
@@ -116,6 +124,8 @@ class Chip_8 {
     /* Chip 8 Keyboard */
     std::unordered_map<uint8_t, bool> _keyboard;
     uint8_t _curr_pressed_key;
+    /* Refresh State */
+    Refresh_State _refresh_state;
 };
 
 #endif

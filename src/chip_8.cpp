@@ -25,6 +25,9 @@ Chip_8::Chip_8() {
   _keyboard = std::unordered_map<uint8_t, bool>();
   _curr_pressed_key = NO_KEY;
 
+  /* Initialise refresh state */
+  _refresh_state = Refresh_State::FREE;
+
   /* Load font into memory starting at 0x50 */
   uint16_t ptr = FONT_ADDRESS;
   for(const uint8_t &font_data : font) {
@@ -218,7 +221,6 @@ void Chip_8::run_cycle() {
       }
       break;
 
-
     case 0x9:
       /* 9XY0 - Skips one instruction is vX != vY */
       if(_vs[op1] != _vs[op2]) _program_counter += 2;
@@ -258,31 +260,45 @@ void Chip_8::run_cycle() {
       */
       /* Get x and y from their respective registers */
       {
-        uint8_t x = _vs[op1] % DISPLAY_WIDTH;
-        uint8_t y = _vs[op2] % DISPLAY_HEIGHT;
+        switch(_refresh_state) {
+          case Refresh_State::FREE:
+            _refresh_state = Refresh_State::WAITING;
+            _program_counter -= INSTRUCTION_SIZE;
+            break;
+          
+          case Refresh_State::WAITING:
+            _program_counter -= INSTRUCTION_SIZE;
+            break;
 
-        /* Set flag register to 0 */
-        _vs[FLAG_REG] = 0;
+          case Refresh_State::REFRESH_FINISHED:
+            _refresh_state = Refresh_State::FREE;
+            uint8_t x = _vs[op1] % DISPLAY_WIDTH;
+            uint8_t y = _vs[op2] % DISPLAY_HEIGHT;
 
-        for(uint16_t i = 0; i < static_cast<uint16_t>(op3); i++) {
-          uint8_t sprite_data = _memory[_index_register + i];
-          for(uint16_t j = 0; j < BYTE_SIZE; j++) {
-            /* Get current sprite pixel */
-            uint8_t sprite_pixel = (sprite_data & (BIT_MASK << (BYTE_SIZE - 1 - j))) >> (BYTE_SIZE - 1 - j);
-            uint8_t display_pixel = _display[y + i][x + j];
+            /* Set flag register to 0 */
+            _vs[FLAG_REG] = 0;
 
-            /* If they are both on then set vF to 1 */
-            if(sprite_pixel && display_pixel) _vs[FLAG_REG] = 1;
+            for(uint16_t i = 0; i < static_cast<uint16_t>(op3); i++) {
+              uint8_t sprite_data = _memory[_index_register + i];
+              for(uint16_t j = 0; j < BYTE_SIZE; j++) {
+                /* Get current sprite pixel */
+                uint8_t sprite_pixel = (sprite_data & (BIT_MASK << (BYTE_SIZE - 1 - j))) >> (BYTE_SIZE - 1 - j);
+                uint8_t display_pixel = _display[y + i][x + j];
 
-            /* Set display pixel to the XOR of both pixels */
-            _display[y + i][x + j] = sprite_pixel ^ display_pixel;
+                /* If they are both on then set vF to 1 */
+                if(sprite_pixel && display_pixel) _vs[FLAG_REG] = 1;
 
-            /* If the right edge of the screen is reached, stop drawing this row */
-            if(x + j == DISPLAY_WIDTH - 1) break;
-          }
+                /* Set display pixel to the XOR of both pixels */
+                _display[y + i][x + j] = sprite_pixel ^ display_pixel;
 
-          /* If the bottom edge of the screen is reached, stop */
-          if(y + i == DISPLAY_HEIGHT - 1) break;
+                /* If the right edge of the screen is reached, stop drawing this row */
+                if(x + j == DISPLAY_WIDTH - 1) break;
+              }
+
+              /* If the bottom edge of the screen is reached, stop */
+              if(y + i == DISPLAY_HEIGHT - 1) break;
+            }
+            break;
         }
       }
       break;
@@ -424,4 +440,9 @@ void Chip_8::update_keyboard_status() {
   for(const std::pair<const sf::Keyboard::Key, uint8_t> &mapping : keyboard_mapping) {
     _keyboard[mapping.second] = sf::Keyboard::isKeyPressed(mapping.first);
   }
+}
+
+/* Updates refresh state to refresh finished if it is currently waiting */
+void Chip_8::set_refresh_state() {
+  if(_refresh_state == Refresh_State::WAITING) _refresh_state = Refresh_State::REFRESH_FINISHED;
 }

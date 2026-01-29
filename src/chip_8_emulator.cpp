@@ -5,7 +5,7 @@
 #include "screen.h"
 
 #define TIMER_FRAME_DURATION 16.666
-#define CYCLE_FRAME_DURATION 1.428
+#define CYCLE_FRAME_DURATION 1
 
 int main(int argc, char** argv) {
   std::unique_ptr<Chip_8> chip_8 = std::make_unique<Chip_8>();
@@ -46,6 +46,7 @@ int main(int argc, char** argv) {
       chip_8->decrease_delay_timer();
       chip_8->decrease_sound_timer();
       screen->display(chip_8->get_data());
+      chip_8->set_refresh_state();
     }
   }
 
