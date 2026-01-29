@@ -27,7 +27,7 @@ Chip_8::Chip_8() {
 
   /* Load font into memory starting at 0x50 */
   uint16_t ptr = FONT_ADDRESS;
-  for(uint8_t font_data : font) {
+  for(const uint8_t &font_data : font) {
     _memory[ptr++] = font_data;
   }
 
@@ -307,7 +307,7 @@ void Chip_8::run_cycle() {
           /* FX0A - Blocks until a character is pressed (by decrementing program counter) and sets vX to it */
           {
             bool key_is_pressed = false;
-            for(const std::pair<uint8_t, bool> key : _keyboard) {
+            for(const std::pair<const uint8_t, bool> &key : _keyboard) {
               key_is_pressed |= key.second;
             }
 
@@ -316,7 +316,7 @@ void Chip_8::run_cycle() {
               _program_counter -= INSTRUCTION_SIZE;
             } else if(_curr_pressed_key == NO_KEY) {
               /* If a key has been pressed, find the key */
-              for (const std::pair<uint8_t, bool> key : _keyboard) {
+              for(const std::pair<const uint8_t, bool> &key : _keyboard) {
                 if(key.second) {
                   _curr_pressed_key = key.first;
                   break;
@@ -416,7 +416,7 @@ std::vector<std::vector<bool>> Chip_8::get_data() {
 
 /* Updates the status of the keyboard */
 void Chip_8::update_keyboard_status() {
-  for(const std::pair<sf::Keyboard::Key, uint8_t> &mapping : keyboard_mapping) {
+  for(const std::pair<const sf::Keyboard::Key, uint8_t> &mapping : keyboard_mapping) {
     _keyboard[mapping.second] = sf::Keyboard::isKeyPressed(mapping.first);
   }
 }
