@@ -360,6 +360,11 @@ void Chip_8::run_cycle() {
           */
           if(_index_register > ADDRESS_RANGE) _vs[FLAG_REG] = 1;
           break;
+
+        case 0x29:
+          /* FX29 - Set index register to the font of the character stored in vX */
+          _index_register = FONT_ADDRESS + (_vs[op1] * FONT_SIZE);
+          break;
       
         case 0x33:
           {
