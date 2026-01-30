@@ -1,4 +1,6 @@
+#include <boost/program_options.hpp>
 #include <chrono>
+#include <iostream>
 #include <memory>
 #include <string>
 #include "chip_8.h"
@@ -7,13 +9,65 @@
 #define TIMER_FRAME_DURATION 16.666
 #define CYCLE_FRAME_DURATION 1
 
-int main(int argc, char** argv) {
-  std::unique_ptr<Chip_8> chip_8 = std::make_unique<Chip_8>();
-  std::unique_ptr<Screen> screen = std::make_unique<Screen>(DISPLAY_HEIGHT, DISPLAY_WIDTH);
+typedef struct Arguments {
+  std::string file_name;
+} Arguments;
 
+std::optional<Arguments> parse_arguments(int argc, char **argv) {
+  boost::program_options::options_description description("Options");
+  description.add_options()
+    ("help", "Print help message and exit")
+    ("input-file", boost::program_options::value<std::string>(), "Specify the path of the ROM to be loaded");
+  boost::program_options::positional_options_description pod;
+  pod.add("input-file", -1);
+  boost::program_options::variables_map variables_map;
+
+  boost::program_options::store(
+    boost::program_options::command_line_parser(argc, argv) 
+      .options(description)
+      .positional(pod)
+      .run(),
+    variables_map
+  );
+
+  boost::program_options::notify(variables_map);
+  
+  std::string file_name;
+
+  if(variables_map.count("help")) {
+    std::cout << "Usage: ./chip_8_emulator [OPTIONS] <PATH-TO-ROM>" << std::endl;
+    std::cout << std::endl;
+    std::cout << description << std::endl;
+    return {};
+  }
+
+  if(!variables_map.count("input-file")) {
+    std::cout << "Please provide a path to a Chip 8 ROM" << std::endl;
+    std::cout << "Use --help for more info" << std::endl;
+    return {};
+  } else {
+    file_name = variables_map["input-file"].as<std::string>();
+  }
+
+  return {{file_name}};
+}
+
+
+int main(int argc, char **argv) {
+  std::optional<Arguments> opt_arguments = parse_arguments(argc, argv);
+  if(!opt_arguments) return 0;
+  Arguments args = *opt_arguments;
+
+  std::unique_ptr<Chip_8> chip_8 = std::make_unique<Chip_8>();
   /* Load the ROM */
-  std::string file_name = argv[1];
-  chip_8->load_ROM(file_name);
+  bool success = chip_8->load_ROM(args.file_name);
+  if(!success) {
+    std::cout << args.file_name << " could not be opened. Check "
+      "if this file exists and the path supplied is correct" << std::endl;
+    return 0;
+  }
+
+  std::unique_ptr<Screen> screen = std::make_unique<Screen>(DISPLAY_HEIGHT, DISPLAY_WIDTH);
 
   /* Get the current time */
   std::chrono::system_clock::time_point prev_timer_time = std::chrono::system_clock::now();
