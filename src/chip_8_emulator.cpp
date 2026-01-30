@@ -14,10 +14,12 @@ typedef struct Arguments {
 } Arguments;
 
 std::optional<Arguments> parse_arguments(int argc, char **argv) {
+  /* Descriptions of the optional flags a user can provide */
   boost::program_options::options_description description("Options");
   description.add_options()
     ("help", "Print help message and exit")
     ("input-file", boost::program_options::value<std::string>(), "Specify the path of the ROM to be loaded");
+  /* Make the input-file flag optional, user can provide a file name only without using the input-file flag */
   boost::program_options::positional_options_description pod;
   pod.add("input-file", -1);
   boost::program_options::variables_map variables_map;
@@ -34,6 +36,7 @@ std::optional<Arguments> parse_arguments(int argc, char **argv) {
   
   std::string file_name;
 
+  /* Check for the help flag */
   if(variables_map.count("help")) {
     std::cout << "Usage: ./chip_8_emulator [OPTIONS] <PATH-TO-ROM>" << std::endl;
     std::cout << std::endl;
@@ -41,6 +44,7 @@ std::optional<Arguments> parse_arguments(int argc, char **argv) {
     return {};
   }
 
+  /* Check for the input-file flag */
   if(!variables_map.count("input-file")) {
     std::cout << "Please provide a path to a Chip 8 ROM" << std::endl;
     std::cout << "Use --help for more info" << std::endl;
@@ -54,12 +58,14 @@ std::optional<Arguments> parse_arguments(int argc, char **argv) {
 
 
 int main(int argc, char **argv) {
+  /* Parse command line arguments */
   std::optional<Arguments> opt_arguments = parse_arguments(argc, argv);
+  /* If the command line arguments parsing failed, return from the program */
   if(!opt_arguments) return 0;
   Arguments args = *opt_arguments;
 
   std::unique_ptr<Chip_8> chip_8 = std::make_unique<Chip_8>();
-  /* Load the ROM */
+  /* Load the ROM and check if it was successful */
   bool success = chip_8->load_ROM(args.file_name);
   if(!success) {
     std::cout << args.file_name << " could not be opened. Check "

@@ -42,6 +42,7 @@ Chip_8::Chip_8() {
 bool Chip_8::load_ROM(std::string file_name) {
   /* Open file */
   std::ifstream file(file_name, std::ios_base::binary);
+  /* If this file does not exist, return false */
   if(!file.good()) return false;
 
   /* Read data byte by byte and store in memory starting from 0x200 */
