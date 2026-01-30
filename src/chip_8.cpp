@@ -39,9 +39,10 @@ Chip_8::Chip_8() {
 };
 
 /* Load ROM data into memory */
-void Chip_8::load_ROM(std::string file_name) {
+bool Chip_8::load_ROM(std::string file_name) {
   /* Open file */
   std::ifstream file(file_name, std::ios_base::binary);
+  if(!file.good()) return false;
 
   /* Read data byte by byte and store in memory starting from 0x200 */
   char curr_byte;
@@ -49,6 +50,7 @@ void Chip_8::load_ROM(std::string file_name) {
   while(file.get(curr_byte)) { 
     _memory[ptr++] = static_cast<uint8_t>(curr_byte);
   }
+  return true;
 }
 
 /* Decreases delay timer if bigger than 0 */

@@ -83,7 +83,7 @@ class Chip_8 {
     /* Construtor*/
     Chip_8();
     /* Load ROM data into memory */
-    void load_ROM(std::string);
+    bool load_ROM(std::string);
     /* Decreases delay timer by 1 if its value is bigger than 0 */
     void decrease_delay_timer();
     /* Decreases sound timer by 1 if its value is bigger than 0 */
