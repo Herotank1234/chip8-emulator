@@ -32,6 +32,7 @@ Chip_8::Chip_8(Arguments args) {
   _file_name = args.file_name;
   _dw = args.dw;
   _vfreset = args.vfreset;
+  _meminc = args.meminc;
 
   /* Load font into memory starting at 0x50 */
   uint16_t ptr = FONT_ADDRESS;
@@ -395,15 +396,27 @@ void Chip_8::run_cycle() {
 
         case 0x55:
           /* FX55 - Store registers v0 to vX into memory starting at index register */
-          for(int i = 0; i <= op1; i++) {
-            _memory[_index_register + i] = _vs[i];
+          if(_meminc) {
+            for(int i = 0; i <= op1; i++) {
+              _memory[_index_register++] = _vs[i];
+            }
+          } else {
+            for(int i = 0; i <= op1; i++) {
+              _memory[_index_register + i] = _vs[i];
+            }
           }
           break;
 
         case 0x65:
           /* FX65 - Load registers v0 to vX from memory starting at index register */
-          for(int i = 0; i <= op1; i++) {
-            _vs[i] = _memory[_index_register + i];
+          if(_meminc) {
+            for(int i = 0; i <= op1; i++) {
+              _vs[i] = _memory[_index_register++];
+            }
+          } else {
+            for(int i = 0; i <= op1; i++) {
+              _vs[i] = _memory[_index_register + i];
+            }
           }
           break;
       }

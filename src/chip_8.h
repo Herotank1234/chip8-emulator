@@ -82,6 +82,7 @@ typedef struct Arguments {
   std::string file_name;
   bool dw;
   bool vfreset;
+  bool meminc;
 } Arguments;
 
 class Chip_8 {
@@ -138,6 +139,7 @@ class Chip_8 {
     std::string _file_name;
     bool _dw;
     bool _vfreset;
+    bool _meminc;
 };
 
 #endif

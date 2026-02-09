@@ -16,7 +16,8 @@ std::optional<Arguments> parse_arguments(int argc, char **argv) {
     ("help", "Print help message and exit")
     ("input-file", boost::program_options::value<std::string>(), "Specify the path of the ROM to be loaded")
     ("dw", "Sets display waiting to on")
-    ("vfreset", "AND, OR, XOR reset flag register to 0");
+    ("vfreset", "AND, OR, XOR reset flag register to 0")
+    ("meminc", "Increments index register when loading from and storing to memory");
   /* Make the input-file flag optional, user can provide a file name only without using the input-file flag */
   boost::program_options::positional_options_description pod;
   pod.add("input-file", -1);
@@ -42,7 +43,7 @@ std::optional<Arguments> parse_arguments(int argc, char **argv) {
     return {};
   }
 
-  Arguments args{"", false, false};
+  Arguments args{"", false, false, false};
 
   /* Check for the input-file flag */
   if(!variables_map.count("input-file")) {
@@ -59,6 +60,10 @@ std::optional<Arguments> parse_arguments(int argc, char **argv) {
 
   if(variables_map.count("vfreset")) {
     args.vfreset = true;
+  }
+
+  if(variables_map.count("meminc")) {
+    args.meminc = true;
   }
 
   return {args};
