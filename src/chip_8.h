@@ -85,6 +85,7 @@ typedef struct Arguments {
   bool meminc;
   bool clip;
   bool shiftx;
+  bool jumpx;
 } Arguments;
 
 class Chip_8 {
@@ -144,6 +145,7 @@ class Chip_8 {
     bool _meminc;
     bool _clip;
     bool _shiftx;
+    bool _jumpx;
 };
 
 #endif

@@ -35,6 +35,7 @@ Chip_8::Chip_8(Arguments args) {
   _meminc = args.meminc;
   _clip = args.clip;
   _shiftx = args.shiftx;
+  _jumpx = args.jumpx;
 
   /* Load font into memory starting at 0x50 */
   uint16_t ptr = FONT_ADDRESS;
@@ -252,8 +253,13 @@ void Chip_8::run_cycle() {
     case 0xB:
       /* BNNN - Jump to the address NNN + the value in v0 */
       {
-        uint16_t new_address = (op1 << (NIBBLE_SIZE * 2)) | (op2 << NIBBLE_SIZE) | op3;
-        new_address += _vs[0];
+        uint16_t new_address;
+        new_address = (op1 << (NIBBLE_SIZE * 2)) | (op2 << NIBBLE_SIZE) | op3;
+        if(_jumpx) {
+          new_address += _vs[op1];
+        } else {
+          new_address += _vs[0];
+        }
         _program_counter = new_address;
       }
       break;
