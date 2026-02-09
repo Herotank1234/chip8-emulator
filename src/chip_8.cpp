@@ -33,6 +33,7 @@ Chip_8::Chip_8(Arguments args) {
   _dw = args.dw;
   _vfreset = args.vfreset;
   _meminc = args.meminc;
+  _clip = args.clip;
 
   /* Load font into memory starting at 0x50 */
   uint16_t ptr = FONT_ADDRESS;
@@ -437,20 +438,24 @@ void Chip_8::_draw_sprite(uint8_t op1, uint8_t op2, uint8_t op3) {
     for(uint16_t j = 0; j < BYTE_SIZE; j++) {
       /* Get current sprite pixel */
       uint8_t sprite_pixel = (sprite_data & (BIT_MASK << (BYTE_SIZE - 1 - j))) >> (BYTE_SIZE - 1 - j);
-      uint8_t display_pixel = _display[y + i][x + j];
+      uint8_t display_pixel = _display[(y + i) % DISPLAY_HEIGHT][(x + j) % DISPLAY_WIDTH];
 
       /* If they are both on then set vF to 1 */
       if(sprite_pixel && display_pixel) _vs[FLAG_REG] = 1;
 
       /* Set display pixel to the XOR of both pixels */
-      _display[y + i][x + j] = sprite_pixel ^ display_pixel;
+      _display[(y + i) % DISPLAY_HEIGHT][(x + j) % DISPLAY_WIDTH] = sprite_pixel ^ display_pixel;
 
       /* If the right edge of the screen is reached, stop drawing this row */
-      if(x + j == DISPLAY_WIDTH - 1) break;
+      if(_clip) {
+        if(x + j == DISPLAY_WIDTH - 1) break;
+      }
     } 
 
     /* If the bottom edge of the screen is reached, stop */
-    if(y + i == DISPLAY_HEIGHT - 1) break;
+    if(_clip) {    
+      if(y + i == DISPLAY_HEIGHT - 1) break;
+    }
   }
 }
 

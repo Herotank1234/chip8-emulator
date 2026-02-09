@@ -15,9 +15,10 @@ std::optional<Arguments> parse_arguments(int argc, char **argv) {
   description.add_options()
     ("help", "Print help message and exit")
     ("input-file", boost::program_options::value<std::string>(), "Specify the path of the ROM to be loaded")
-    ("dw", "Sets display waiting to on")
-    ("vfreset", "AND, OR, XOR reset flag register to 0")
-    ("meminc", "Increments index register when loading from and storing to memory");
+    ("dw", "Sets display waiting to off (default: on)")
+    ("vfreset", "AND, OR, XOR reset flag register to 0 to off (default: on)")
+    ("meminc", "Increments index register when loading from and storing to memory to off (default: on)")
+    ("noclip", "Clip sprite at edge of screen to off (default: on)");
   /* Make the input-file flag optional, user can provide a file name only without using the input-file flag */
   boost::program_options::positional_options_description pod;
   pod.add("input-file", -1);
@@ -43,7 +44,7 @@ std::optional<Arguments> parse_arguments(int argc, char **argv) {
     return {};
   }
 
-  Arguments args{"", false, false, false};
+  Arguments args{"", true, true, true, true};
 
   /* Check for the input-file flag */
   if(!variables_map.count("input-file")) {
@@ -55,15 +56,19 @@ std::optional<Arguments> parse_arguments(int argc, char **argv) {
   }
 
   if(variables_map.count("dw")) {
-    args.dw = true;
+    args.dw = false;
   }
 
   if(variables_map.count("vfreset")) {
-    args.vfreset = true;
+    args.vfreset = false;
   }
 
   if(variables_map.count("meminc")) {
-    args.meminc = true;
+    args.meminc = false;
+  }
+
+  if(variables_map.count("noclip")) {
+    args.clip = false;
   }
 
   return {args};
