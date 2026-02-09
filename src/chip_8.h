@@ -81,6 +81,7 @@ typedef enum Refresh_State {
 typedef struct Arguments {
   std::string file_name;
   bool dw;
+  bool vfreset;
 } Arguments;
 
 class Chip_8 {
@@ -136,6 +137,7 @@ class Chip_8 {
     /* Flags passed to construtor */
     std::string _file_name;
     bool _dw;
+    bool _vfreset;
 };
 
 #endif

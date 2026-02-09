@@ -31,6 +31,7 @@ Chip_8::Chip_8(Arguments args) {
   /* Initialise from arguments passed in */
   _file_name = args.file_name;
   _dw = args.dw;
+  _vfreset = args.vfreset;
 
   /* Load font into memory starting at 0x50 */
   uint16_t ptr = FONT_ADDRESS;
@@ -160,16 +161,19 @@ void Chip_8::run_cycle() {
         case 0x1:
           /* 8XY1 - vX = vX | vY*/
           _vs[op1] = _vs[op1] | _vs[op2];
+          if(_vfreset) _vs[FLAG_REG] = 0;
           break;
 
         case 0x2:
           /* 8XY2 - vX = vX & vY*/
           _vs[op1] = _vs[op1] & _vs[op2];
+          if(_vfreset) _vs[FLAG_REG] = 0;
           break;
 
         case 0x3:
           /* 8XY3 - vX = vX ^ vY*/
           _vs[op1] = _vs[op1] ^ _vs[op2];
+          if(_vfreset) _vs[FLAG_REG] = 0;
           break;
 
         case 0x4:
