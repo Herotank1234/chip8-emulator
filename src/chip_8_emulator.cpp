@@ -7,18 +7,15 @@
 #include "screen.h"
 
 #define TIMER_FRAME_DURATION 16.666
-#define CYCLE_FRAME_DURATION 1
-
-typedef struct Arguments {
-  std::string file_name;
-} Arguments;
+#define CYCLE_FRAME_DURATION 0.1
 
 std::optional<Arguments> parse_arguments(int argc, char **argv) {
   /* Descriptions of the optional flags a user can provide */
   boost::program_options::options_description description("Options");
   description.add_options()
     ("help", "Print help message and exit")
-    ("input-file", boost::program_options::value<std::string>(), "Specify the path of the ROM to be loaded");
+    ("input-file", boost::program_options::value<std::string>(), "Specify the path of the ROM to be loaded")
+    ("dw", "Sets display waiting to on");
   /* Make the input-file flag optional, user can provide a file name only without using the input-file flag */
   boost::program_options::positional_options_description pod;
   pod.add("input-file", -1);
@@ -44,18 +41,23 @@ std::optional<Arguments> parse_arguments(int argc, char **argv) {
     return {};
   }
 
+  Arguments args{"", false};
+
   /* Check for the input-file flag */
   if(!variables_map.count("input-file")) {
     std::cout << "Please provide a path to a Chip 8 ROM" << std::endl;
     std::cout << "Use --help for more info" << std::endl;
     return {};
   } else {
-    file_name = variables_map["input-file"].as<std::string>();
+    args.file_name = variables_map["input-file"].as<std::string>();
   }
 
-  return {{file_name}};
-}
+  if(variables_map.count("dw")) {
+    args.dw = true;
+  }
 
+  return {args};
+}
 
 int main(int argc, char **argv) {
   /* Parse command line arguments */
@@ -64,9 +66,9 @@ int main(int argc, char **argv) {
   if(!opt_arguments) return 0;
   Arguments args = *opt_arguments;
 
-  std::unique_ptr<Chip_8> chip_8 = std::make_unique<Chip_8>();
+  std::unique_ptr<Chip_8> chip_8 = std::make_unique<Chip_8>(args);
   /* Load the ROM and check if it was successful */
-  bool success = chip_8->load_ROM(args.file_name);
+  bool success = chip_8->load_ROM();
   if(!success) {
     std::cout << args.file_name << " could not be opened. Check "
       "if this file exists and the path supplied is correct" << std::endl;

@@ -1,7 +1,7 @@
 #include <fstream>
 #include "chip_8.h"
 
-Chip_8::Chip_8() {
+Chip_8::Chip_8(Arguments args) {
   /* Initialise zeroed out memory */
   _memory = std::vector<uint8_t>(MEMORY_SIZE, 0);
 
@@ -28,6 +28,10 @@ Chip_8::Chip_8() {
   /* Initialise refresh state */
   _refresh_state = Refresh_State::FREE;
 
+  /* Initialise from arguments passed in */
+  _file_name = args.file_name;
+  _dw = args.dw;
+
   /* Load font into memory starting at 0x50 */
   uint16_t ptr = FONT_ADDRESS;
   for(const uint8_t &font_data : font) {
@@ -39,9 +43,9 @@ Chip_8::Chip_8() {
 };
 
 /* Load ROM data into memory */
-bool Chip_8::load_ROM(std::string file_name) {
+bool Chip_8::load_ROM() {
   /* Open file */
-  std::ifstream file(file_name, std::ios_base::binary);
+  std::ifstream file(_file_name, std::ios_base::binary);
   /* If this file does not exist, return false */
   if(!file.good()) return false;
 
@@ -263,45 +267,24 @@ void Chip_8::run_cycle() {
       */
       /* Get x and y from their respective registers */
       {
-        switch(_refresh_state) {
-          case Refresh_State::FREE:
-            _refresh_state = Refresh_State::WAITING;
-            _program_counter -= INSTRUCTION_SIZE;
-            break;
-          
-          case Refresh_State::WAITING:
-            _program_counter -= INSTRUCTION_SIZE;
-            break;
+        if(_dw) {
+          switch(_refresh_state) {
+            case Refresh_State::FREE:
+              _refresh_state = Refresh_State::WAITING;
+              _program_counter -= INSTRUCTION_SIZE;
+              break;
+            
+            case Refresh_State::WAITING:
+              _program_counter -= INSTRUCTION_SIZE;
+              break;
 
-          case Refresh_State::REFRESH_FINISHED:
-            _refresh_state = Refresh_State::FREE;
-            uint8_t x = _vs[op1] % DISPLAY_WIDTH;
-            uint8_t y = _vs[op2] % DISPLAY_HEIGHT;
-
-            /* Set flag register to 0 */
-            _vs[FLAG_REG] = 0;
-
-            for(uint16_t i = 0; i < static_cast<uint16_t>(op3); i++) {
-              uint8_t sprite_data = _memory[_index_register + i];
-              for(uint16_t j = 0; j < BYTE_SIZE; j++) {
-                /* Get current sprite pixel */
-                uint8_t sprite_pixel = (sprite_data & (BIT_MASK << (BYTE_SIZE - 1 - j))) >> (BYTE_SIZE - 1 - j);
-                uint8_t display_pixel = _display[y + i][x + j];
-
-                /* If they are both on then set vF to 1 */
-                if(sprite_pixel && display_pixel) _vs[FLAG_REG] = 1;
-
-                /* Set display pixel to the XOR of both pixels */
-                _display[y + i][x + j] = sprite_pixel ^ display_pixel;
-
-                /* If the right edge of the screen is reached, stop drawing this row */
-                if(x + j == DISPLAY_WIDTH - 1) break;
-              }
-
-              /* If the bottom edge of the screen is reached, stop */
-              if(y + i == DISPLAY_HEIGHT - 1) break;
-            }
-            break;
+            case Refresh_State::REFRESH_FINISHED:
+              _refresh_state = Refresh_State::FREE;
+              _draw_sprite(op1, op2, op3);
+              break;
+          }
+        } else {
+          _draw_sprite(op1, op2, op3);
         }
       }
       break;
@@ -424,6 +407,36 @@ void Chip_8::run_cycle() {
   }
 }
 
+/* Draw sprite to _display */
+void Chip_8::_draw_sprite(uint8_t op1, uint8_t op2, uint8_t op3) {
+  uint8_t x = _vs[op1] % DISPLAY_WIDTH;
+  uint8_t y = _vs[op2] % DISPLAY_HEIGHT;
+
+  /* Set flag register to 0 */
+  _vs[FLAG_REG] = 0;
+
+  for(uint16_t i = 0; i < static_cast<uint16_t>(op3); i++) {
+    uint8_t sprite_data = _memory[_index_register + i];
+    for(uint16_t j = 0; j < BYTE_SIZE; j++) {
+      /* Get current sprite pixel */
+      uint8_t sprite_pixel = (sprite_data & (BIT_MASK << (BYTE_SIZE - 1 - j))) >> (BYTE_SIZE - 1 - j);
+      uint8_t display_pixel = _display[y + i][x + j];
+
+      /* If they are both on then set vF to 1 */
+      if(sprite_pixel && display_pixel) _vs[FLAG_REG] = 1;
+
+      /* Set display pixel to the XOR of both pixels */
+      _display[y + i][x + j] = sprite_pixel ^ display_pixel;
+
+      /* If the right edge of the screen is reached, stop drawing this row */
+      if(x + j == DISPLAY_WIDTH - 1) break;
+    } 
+
+    /* If the bottom edge of the screen is reached, stop */
+    if(y + i == DISPLAY_HEIGHT - 1) break;
+  }
+}
+
 /* Sets all values held in _display to false */
 void Chip_8::clear_screen_data() {
   for(size_t i = 0; i < DISPLAY_HEIGHT; i++) {
@@ -447,5 +460,7 @@ void Chip_8::update_keyboard_status() {
 
 /* Updates refresh state to refresh finished if it is currently waiting */
 void Chip_8::set_refresh_state() {
-  if(_refresh_state == Refresh_State::WAITING) _refresh_state = Refresh_State::REFRESH_FINISHED;
+  if(_dw) {
+    if(_refresh_state == Refresh_State::WAITING) _refresh_state = Refresh_State::REFRESH_FINISHED;
+  }
 }

@@ -78,12 +78,17 @@ typedef enum Refresh_State {
   REFRESH_FINISHED
 } Refresh_State;
 
+typedef struct Arguments {
+  std::string file_name;
+  bool dw;
+} Arguments;
+
 class Chip_8 {
   public:
     /* Construtor*/
-    Chip_8();
+    Chip_8(Arguments args);
     /* Load ROM data into memory */
-    bool load_ROM(std::string);
+    bool load_ROM();
     /* Decreases delay timer by 1 if its value is bigger than 0 */
     void decrease_delay_timer();
     /* Decreases sound timer by 1 if its value is bigger than 0 */
@@ -99,6 +104,8 @@ class Chip_8 {
     /* Set the refresh state */
     void set_refresh_state();
   private:
+    /* Draw sprite to _display */
+    void _draw_sprite(uint8_t op1, uint8_t op2, uint8_t op3);
     /* Memory - 4KB */
     std::vector<uint8_t> _memory;
     /* Display - 64x32 pixels */
@@ -126,6 +133,9 @@ class Chip_8 {
     uint8_t _curr_pressed_key;
     /* Refresh State */
     Refresh_State _refresh_state;
+    /* Flags passed to construtor */
+    std::string _file_name;
+    bool _dw;
 };
 
 #endif
