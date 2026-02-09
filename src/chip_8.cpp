@@ -34,6 +34,7 @@ Chip_8::Chip_8(Arguments args) {
   _vfreset = args.vfreset;
   _meminc = args.meminc;
   _clip = args.clip;
+  _shiftx = args.shiftx;
 
   /* Load font into memory starting at 0x50 */
   uint16_t ptr = FONT_ADDRESS;
@@ -201,7 +202,7 @@ void Chip_8::run_cycle() {
         case 0x6:
           {
             /* 8XY6 - set vX = vY, then shift vX 1 bit to the right */
-            _vs[op1] = _vs[op2];
+            if(!_shiftx) _vs[op1] = _vs[op2];
             /* Get bit that will be shifted out */
             uint8_t shifted_bit = _vs[op1] & BIT_MASK;
             _vs[op1] >>= 1;
@@ -223,7 +224,7 @@ void Chip_8::run_cycle() {
         case 0xE:
           {
             /* 8XYE - set vX = vY, then shift vX 1 bit to the left */
-            _vs[op1] = _vs[op2];
+            if(!_shiftx) _vs[op1] = _vs[op2];
             /* Get bit that will be shifted out */
             uint8_t shifted_bit = (_vs[op1] & (BIT_MASK << (BYTE_SIZE - 1))) >> (BYTE_SIZE - 1);
             _vs[op1] <<= 1;
